@@ -11,11 +11,6 @@ import mlflow
 import xgboost as xgb
 from prefect import flow, task
 
-B_PATH = Path(__file__).parents[2]
-M_PATH = B_PATH / 'model'
-D_PATH = B_PATH / 'data'
-MLFLOW_SQL_PATH = f"sqlite:///{M_PATH.as_posix()}/mlflow.db"
-
 @task(retries=3, retry_delay_seconds=2)
 def read_data(filename: str) -> pd.DataFrame:
     """Read data into DataFrame"""
@@ -113,14 +108,13 @@ def train_best_model(
 
 @flow
 def main_flow(
-    MLFLOW_SQL_PATH: pathlib.PosixPath = MLFLOW_SQL_PATH,
-    train_path: str = (D_PATH / "green_tripdata_2021-01.parquet").as_posix(),
-    val_path: str = (D_PATH / "green_tripdata_2021-02.parquet").as_posix()
+    train_path: str =  "./data/green_tripdata_2021-01.parquet"
+    val_path: str = "./data/green_tripdata_2021-02.parquet"
 ) -> None:
     """The main training pipeline"""
 
     # MLflow settings
-    mlflow.set_tracking_uri(MLFLOW_SQL_PATH)
+    mlflow.set_tracking_uri("sqlite:///data/mlflow.db")
     mlflow.set_experiment("nyc-taxi-experiment")
 
     # Load
