@@ -14,9 +14,8 @@ from prefect import flow, task
 B_PATH = Path(__file__).parent
 D_PATH = B_PATH / 'data'
 
-
 @task(retries=3, retry_delay_seconds=2)
-def read_data(filename: str) -> pd.DataFrame:
+def read_data(filename: pathlib.PosixPath) -> pd.DataFrame:
     """Read data into DataFrame"""
     df = pd.read_parquet(filename)
 
