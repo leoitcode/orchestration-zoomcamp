@@ -4,12 +4,17 @@ import pandas as pd
 import numpy as np
 import scipy
 import sklearn
+from pathlib import Path
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import mean_squared_error
 import mlflow
 import xgboost as xgb
 from prefect import flow, task
 
+B_PATH = Path(__file__).parents[2]
+M_PATH = B_PATH / 'model'
+D_PATH = B_PATH / 'data'
+MLFLOW_SQL_PATH = f"sqlite:///{M_PATH.as_posix()}/mlflow.db"
 
 @task(retries=3, retry_delay_seconds=2)
 def read_data(filename: str) -> pd.DataFrame:
@@ -28,7 +33,6 @@ def read_data(filename: str) -> pd.DataFrame:
     df[categorical] = df[categorical].astype(str)
 
     return df
-
 
 @task
 def add_features(
@@ -60,7 +64,6 @@ def add_features(
     y_train = df_train["duration"].values
     y_val = df_val["duration"].values
     return X_train, X_val, y_train, y_val, dv
-
 
 @task(log_prints=True)
 def train_best_model(
@@ -108,16 +111,16 @@ def train_best_model(
         mlflow.xgboost.log_model(booster, artifact_path="models_mlflow")
     return None
 
-
 @flow
 def main_flow(
-    train_path: str = "./data/green_tripdata_2021-01.parquet",
-    val_path: str = "./data/green_tripdata_2021-02.parquet",
+    MLFLOW_SQL_PATH: pathlib.PosixPath = MLFLOW_SQL_PATH,
+    train_path: str = (D_PATH / "green_tripdata_2021-01.parquet").as_posix(),
+    val_path: str = (D_PATH / "green_tripdata_2021-02.parquet").as_posix()
 ) -> None:
     """The main training pipeline"""
 
     # MLflow settings
-    mlflow.set_tracking_uri("sqlite:///mlflow.db")
+    mlflow.set_tracking_uri(MLFLOW_SQL_PATH)
     mlflow.set_experiment("nyc-taxi-experiment")
 
     # Load
