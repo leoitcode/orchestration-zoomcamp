@@ -4,11 +4,16 @@ import pandas as pd
 import numpy as np
 import scipy
 import sklearn
+from pathlib import Path
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.metrics import mean_squared_error
 import mlflow
 import xgboost as xgb
 from prefect import flow, task
+
+B_PATH = Path(__file__).parent
+D_PATH = B_PATH / 'data'
+
 
 @task(retries=3, retry_delay_seconds=2)
 def read_data(filename: str) -> pd.DataFrame:
@@ -107,8 +112,8 @@ def train_best_model(
 
 @flow
 def main_flow(
-    train_path: str =  "../data/green_tripdata_2021-01.parquet",
-    val_path: str = "../data/green_tripdata_2021-02.parquet"
+    train_path: pathlib.PosixPath =  D_PATH / "green_tripdata_2021-01.parquet",
+    val_path: pathlib.PosixPath = D_PATH / "green_tripdata_2021-02.parquet"
 ) -> None:
     """The main training pipeline"""
 
