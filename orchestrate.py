@@ -10,6 +10,7 @@ import mlflow
 import xgboost as xgb
 from prefect import flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect_email import EmailServerCredentials, email_send_message
 from datetime import date
 
 @task(retries=3, retry_delay_seconds=2)
@@ -123,7 +124,20 @@ def train_best_model(
             key="duration-model-report", markdown=markdown__rmse_report
         )
 
-    return None
+    return markdown__rmse_report
+
+@task(retries=3, retry_delay_seconds=2)
+def send_email(email_address: str, report str: markdown__rmse_report):
+    email_server_credentials = EmailServerCredentials.load("block-email")
+    subject = email_send_message.with_options(name=f"email {email_address}").submit(
+            email_server_credentials=email_server_credentials,
+            subject="RSME Result",
+            msg=markdown__rmse_report,
+            email_to=email_address,
+        )
+
+
+
 
 @flow
 def main_flow(
@@ -144,7 +158,10 @@ def main_flow(
     X_train, X_val, y_train, y_val, dv = add_features(df_train, df_val)
 
     # Train
-    train_best_model(X_train, X_val, y_train, y_val, dv)
+    markdown__rmse_report = train_best_model(X_train, X_val, y_train, y_val, dv)
+
+    # Send Email
+    send_email("leonardo.ti.bruno@gmail.com", markdown__rmse_report)
 
 
 if __name__ == "__main__":
