@@ -127,12 +127,12 @@ def train_best_model(
     return markdown__rmse_report
 
 @task(retries=3, retry_delay_seconds=2)
-def send_email(email_address: str, report str: markdown__rmse_report):
+def send_email(email_address: str, report: str):
     email_server_credentials = EmailServerCredentials.load("block-email")
     subject = email_send_message.with_options(name=f"email {email_address}").submit(
             email_server_credentials=email_server_credentials,
             subject="RSME Result",
-            msg=markdown__rmse_report,
+            msg=report,
             email_to=email_address,
         )
 
